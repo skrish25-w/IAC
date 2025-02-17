@@ -1,19 +1,40 @@
-Resources:
-  SecureIACBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: secureiac  
-      VersioningConfiguration:
-        Status: Enabled  # This enables versioning on the S3 bucket
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true  # Blocks public ACLs
-        IgnorePublicAcls: true  # Ignores public ACLs
-        BlockPublicPolicy: true  # Blocks public policies
-        RestrictPublicBuckets: true  # Restricts public buckets
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionMethod: AES256  # Enables AES256 encryption
-      LoggingConfiguration:
-        DestinationBucketName: logging-bucket-name  # Logging destination bucket
-        LogFilePrefix: logs/  
+provider "aws" {
+  region = "ap-south-1"  # Change to your preferred region
+}
 
+resource "aws_s3_bucket" "SecureIACBucket" {
+  bucket = "secureiac"
+
+  versioning {
+    enabled = true  # Enable versioning
+  }
+
+  # Public Access Block Configuration
+  acl = "private"
+
+  public_access_block_configuration {
+    block_public_acls       = true
+    ignore_public_acls      = true
+    block_public_policy     = true
+    restrict_public_buckets = true
+  }
+
+  # Server-Side Encryption
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"  # Enable AES256 encryption
+      }
+    }
+  }
+
+  # Logging Configuration (you will need a destination bucket for logging)
+  logging {
+    target_bucket = "logging-bucket-name"  # Replace with the actual logging bucket name
+    target_prefix = "logs/"  # Log file prefix
+  }
+
+  tags = {
+    Name = "SecureIACBucket"
+  }
+}
