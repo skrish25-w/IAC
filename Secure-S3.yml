@@ -1,37 +1,37 @@
 provider "aws" {
-  region = "ap-south-1"  # Change to your preferred region
+  region = "us-west-2"  # Update this to your region
 }
 
 resource "aws_s3_bucket" "SecureIACBucket" {
   bucket = "secureiac"
 
   versioning {
-    enabled = true  # Enable versioning
+    enabled = true  # Ensures versioning is enabled
   }
 
   # Public Access Block Configuration
-  acl = "private"
+  acl = "private"  # Setting the ACL to private ensures no public access by default
 
   public_access_block_configuration {
-    block_public_acls       = true
-    ignore_public_acls      = true
-    block_public_policy     = true
-    restrict_public_buckets = true
+    block_public_acls       = true     # Block public ACLs
+    ignore_public_acls      = true     # Ignore public ACLs
+    block_public_policy     = true     # Block public policies
+    restrict_public_buckets = true     # Restrict public buckets
   }
 
   # Server-Side Encryption
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"  # Enable AES256 encryption
+        sse_algorithm = "AES256"  # Ensures server-side encryption with AES256
       }
     }
   }
 
-  # Logging Configuration (you will need a destination bucket for logging)
+  # Logging Configuration
   logging {
-    target_bucket = "logging-bucket-name"  # Replace with the actual logging bucket name
-    target_prefix = "logs/"  # Log file prefix
+    target_bucket = "logging-bucket-name"  # Replace with the actual bucket name for logging
+    target_prefix = "logs/"  # Specify log file prefix
   }
 
   tags = {
