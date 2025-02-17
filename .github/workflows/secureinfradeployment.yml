@@ -1,4 +1,4 @@
-name: Create S3 Bucket and upload index.html
+name: Create S3 Bucket and Upload index.html
 
 on:
   push:
@@ -31,7 +31,13 @@ jobs:
     - name: Run Checkov to scan CFT
       run: checkov -f S3_Bucket_Creation.yml
 
-    - name: Create S3 Bucket and Upload index.html
+    - name: Deploy CloudFormation Stack
       run: |
-        aws s3api create-bucket --bucket secureiac --region ap-south-1 --create-bucket-configuration LocationConstraint=ap-south-1
+        aws cloudformation deploy \
+          --template-file S3_Bucket_Creation.yml \
+          --stack-name SecureIACStack \
+          --capabilities CAPABILITY_NAMED_IAM
+
+    - name: Upload index.html to S3 bucket
+      run: |
         aws s3 cp index.html s3://secureiac/index.html
