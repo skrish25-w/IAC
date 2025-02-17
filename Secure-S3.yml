@@ -1,43 +1,18 @@
-AWSTemplateFormatVersion: 2010-09-09
-Description: CloudFormation template for creating a secure S3 bucket with versioning, encryption, and logging enabled.
-
 Resources:
   SecureIACBucket:
-    Type: 'AWS::S3::Bucket'
+    Type: AWS::S3::Bucket
     Properties:
       BucketName: secureiac
-      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled  # Enable versioning for the bucket
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+        BlockPublicAcls: true  # Block public ACLs
+        IgnorePublicAcls: true  # Ignore public ACLs
+        BlockPublicPolicy: true  # Block public policies
+        RestrictPublicBuckets: true  # Restrict public buckets
       BucketEncryption:
         ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-      VersioningConfiguration:
-        Status: Enabled
+          - ServerSideEncryptionMethod: AES256  # Enable server-side encryption
       LoggingConfiguration:
-        DestinationBucketName: !Ref LoggingBucket
-        LogFilePrefix: "logs/"
-
-  LoggingBucket:
-    Type: 'AWS::S3::Bucket'
-    Properties:
-      BucketName: "secureiac-logging-bucket"
-      AccessControl: Private
-      VersioningConfiguration:
-        Status: Enabled
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
-
-Outputs:
-  S3Bucket:
-    Description: Bucket Created using this template.
-    Value: !Ref SecureIACBucket
-    Export:
-      Name: !Sub "${AWS::StackName}-Bucket"
+        DestinationBucketName: logging-bucket-name  # Replace with the actual logging bucket
+        LogFilePrefix: logs/  # Define a prefix for the log files
