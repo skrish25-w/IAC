@@ -29,7 +29,7 @@ jobs:
         pip install checkov
 
     - name: Run Checkov to scan CFT
-      run: checkov -f S3_Bucket_Creation.yml
+      run: checkov -f S3_Bucket_Creation.yml --no-cache
 
     - name: Deploy CloudFormation Stack
       run: |
