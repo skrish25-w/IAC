@@ -1,13 +1,11 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: CloudFormation template for creating a secure S3 bucket
+Description: CloudFormation template for creating a secure S3 bucket with versioning and logging enabled.
 
 Resources:
-  S3Bucket:
-    DeletionPolicy: Retain
+  SecureIACBucket:
     Type: 'AWS::S3::Bucket'
-    Description: Creating Amazon S3 bucket from CloudFormation
     Properties:
-      BucketName: securebucket2025
+      BucketName: secureiac
       AccessControl: Private
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
@@ -20,15 +18,26 @@ Resources:
               SSEAlgorithm: AES256
       VersioningConfiguration:
         Status: Enabled
-      ObjectLockConfiguration:
-        ObjectLockEnabled: Enabled
-        LockConfiguration:
-          LockLegalHold:
-            Status: OFF
+      LoggingConfiguration:
+        DestinationBucketName: !Ref "LoggingBucket"
+        LogFilePrefix: "logs/"
+      
+  LoggingBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: "secureiac-logging-bucket"
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
 Outputs:
   S3Bucket:
     Description: Bucket Created using this template.
-    Value: !Ref S3Bucket
+    Value: !Ref SecureIACBucket
     Export:
       Name: !Sub "${AWS::StackName}-Bucket"
