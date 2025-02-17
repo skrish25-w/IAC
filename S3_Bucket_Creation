@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  SecureIACBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: secureiac
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+
+  SecureIACBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SecureIACBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # Allow public access to list the objects in the bucket
+          - Effect: "Allow"
+            Action:
+              - "s3:ListBucket"
+            Resource: !Sub "arn:aws:s3:::${SecureIACBucket}"
+            Principal: "*"
+
+          # Allow public access to read objects from the bucket
+          - Effect: "Allow"
+            Action:
+              - "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${SecureIACBucket}/*"
+            Principal: "*"
+
+Outputs:
+  SecureIACBucketURL:
+    Description: "URL to access the index.html file"
+    Value: !Sub "https://s3.${AWS::Region}.amazonaws.com/${SecureIACBucket}/index.html"
