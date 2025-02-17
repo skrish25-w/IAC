@@ -28,7 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install checkov
     - name: Clear Checkov Cache
-        run: rm -rf ~/.checkov
+      run: rm -rf ~/.checkov
         
     - name: Run Checkov to scan CFT
       run: checkov -f S3_Bucket_Creation.yml 
