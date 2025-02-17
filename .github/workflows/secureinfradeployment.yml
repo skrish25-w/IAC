@@ -1,0 +1,37 @@
+name: Deploy S3 Bucket with index.html and Checkov Scan
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up AWS OIDC credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: arn:aws:iam::235494823972:role/S3bucket-IAC  # Replace with your IAM role ARN
+        aws-region: ap-south-1
+
+    - name: Install Checkov
+      run: |
+        pip install checkov
+
+    - name: Scan CloudFormation template using Checkov
+      run: |
+        checkov -f S3_Bucket_Creation.yaml --quiet
+      continue-on-error: false
+
+    - name: Deploy CloudFormation Stack to create S3 Bucket
+      run: |
+        aws cloudformation create-stack --stack-name SecureIACStack --template-body file://S3_Bucket_Creation.yaml --capabilities CAPABILITY_IAM
+
+    - name: Upload index.html to S3 Bucket
+      run: |
+        aws s3 cp index.html s3://secureiac/index.html --acl public-read
