@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: CloudFormation template for creating a secure S3 bucket with versioning and logging enabled.
+Description: CloudFormation template for creating a secure S3 bucket with versioning, encryption, and logging enabled.
 
 Resources:
   SecureIACBucket:
@@ -19,9 +19,9 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
       LoggingConfiguration:
-        DestinationBucketName: !Ref "LoggingBucket"
+        DestinationBucketName: !Ref LoggingBucket
         LogFilePrefix: "logs/"
-      
+
   LoggingBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
