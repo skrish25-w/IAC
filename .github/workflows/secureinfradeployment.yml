@@ -1,4 +1,4 @@
-name: Create S3 Bucket and Upload index.html
+name: Create S3 Bucket and upload index.html
 
 on:
   push:
