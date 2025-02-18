@@ -1,0 +1,146 @@
+# === S3 Bucket Security Rules ===
+
+# Ensure that the S3 bucket has encryption enabled
+rule S3BucketEncrypted when resourceType == "AWS::S3::Bucket" {
+    Properties.BucketEncryption exists
+}
+
+# Ensure that S3 bucket logging is enabled
+rule S3BucketLoggingEnabled when resourceType == "AWS::S3::Bucket" {
+    Properties.LoggingConfiguration exists
+}
+
+# Ensure that the S3 bucket is not publicly accessible
+rule S3BucketPublicAccessBlocked when resourceType == "AWS::S3::Bucket" {
+    Properties.PublicAccessBlockConfiguration exists
+    Properties.PublicAccessBlockConfiguration.BlockPublicAcls == true
+    Properties.PublicAccessBlockConfiguration.IgnorePublicAcls == true
+    Properties.PublicAccessBlockConfiguration.BlockPublicPolicy == true
+    Properties.PublicAccessBlockConfiguration.IgnorePublicPolicy == true
+}
+
+# Ensure that the S3 bucket uses versioning
+rule S3BucketVersioningEnabled when resourceType == "AWS::S3::Bucket" {
+    Properties.VersioningConfiguration exists
+    Properties.VersioningConfiguration.Status == "Enabled"
+}
+
+# Ensure that the S3 bucket has a lifecycle configuration
+rule S3BucketLifecycleConfiguration when resourceType == "AWS::S3::Bucket" {
+    Properties.LifecycleConfiguration exists
+}
+
+# === EC2 Instance Security Rules ===
+
+# Ensure that EC2 instances have no open security group (i.e., no 0.0.0.0/0 rule)
+rule EC2InstanceNoOpenSecurityGroup when resourceType == "AWS::EC2::SecurityGroup" {
+    Properties.SecurityGroupIngress[*].CidrIp != "0.0.0.0/0"
+}
+
+# Ensure EC2 instances have no public IP addresses assigned
+rule EC2InstanceNoPublicIP when resourceType == "AWS::EC2::Instance" {
+    Properties.NetworkInterfaces[0].AssociatePublicIpAddress == false
+}
+
+# === IAM Security Rules ===
+
+# Ensure IAM users do not have full "*" access
+rule IAMUserNoFullAccess when resourceType == "AWS::IAM::User" {
+    Properties.Policies[*].PolicyDocument.Statement[*].Action != "*"
+}
+
+# Ensure IAM roles do not have * (wildcard) permission
+rule IAMRoleNoStarPermissions when resourceType == "AWS::IAM::Role" {
+    Properties.AssumeRolePolicyDocument.Statement[*].Action != "*"
+}
+
+# === Lambda Security Rules ===
+
+# Ensure Lambda functions use environment variables securely
+rule LambdaEnvironmentVariables when resourceType == "AWS::Lambda::Function" {
+    Properties.Environment.Variables exists
+    Properties.Environment.Variables != null
+}
+
+# Ensure Lambda function timeout is set to a reasonable value
+rule LambdaFunctionTimeout when resourceType == "AWS::Lambda::Function" {
+    Properties.Timeout <= 60
+}
+
+# === RDS Security Rules ===
+
+# Ensure RDS databases are not publicly accessible
+rule RDSNoPublicAccess when resourceType == "AWS::RDS::DBInstance" {
+    Properties.PubliclyAccessible == false
+}
+
+# Ensure RDS databases have encryption enabled
+rule RDSEncryption when resourceType == "AWS::RDS::DBInstance" {
+    Properties.StorageEncrypted == true
+}
+
+# === VPC Security Rules ===
+
+# Ensure VPCs have a flow log enabled
+rule VPCFlowLogsEnabled when resourceType == "AWS::EC2::VPC" {
+    Properties.FlowLogs exists
+}
+
+# Ensure VPC is not using ClassicLink
+rule VPCNoClassicLink when resourceType == "AWS::EC2::VPC" {
+    Properties.ClassicLinkEnabled == false
+}
+
+# === CloudTrail Rules ===
+
+# Ensure CloudTrail is enabled in the region
+rule CloudTrailEnabled when resourceType == "AWS::CloudTrail::Trail" {
+    Properties.IsMultiRegionTrail == true
+}
+
+# === SNS and SQS Rules ===
+
+# Ensure SNS topics have encryption enabled
+rule SNSTopicEncrypted when resourceType == "AWS::SNS::Topic" {
+    Properties.KmsMasterKeyId exists
+}
+
+# Ensure SQS queues have encryption enabled
+rule SQSQueueEncrypted when resourceType == "AWS::SQS::Queue" {
+    Properties.KmsMasterKeyId exists
+}
+
+# === KMS Rules ===
+
+# Ensure KMS keys are not publicly accessible
+rule KMSKeyNotPublic when resourceType == "AWS::KMS::Key" {
+    Properties.KeyPolicy.Statement[*].Principal.AWS != "*"
+}
+
+# === CloudFormation Rules ===
+
+# Ensure CloudFormation stacks have termination protection enabled
+rule StackTerminationProtection when resourceType == "AWS::CloudFormation::Stack" {
+    Properties.EnableTerminationProtection == true
+}
+
+# === Security Hub Rules ===
+
+# Ensure Security Hub is enabled in the region
+rule SecurityHubEnabled when resourceType == "AWS::SecurityHub::Hub" {
+    Properties.EnableStandards == true
+}
+
+# === Backup Rules ===
+
+# Ensure that Backup plans are set up for EC2 instances
+rule EC2BackupPlan when resourceType == "AWS::Backup::BackupPlan" {
+    Properties.BackupPlan.Rules exists
+}
+
+# === Route53 Rules ===
+
+# Ensure Route 53 record sets are using DNSSEC
+rule Route53DNSSecurity when resourceType == "AWS::Route53::RecordSet" {
+    Properties.Dnssec == "SECURE"
+}
