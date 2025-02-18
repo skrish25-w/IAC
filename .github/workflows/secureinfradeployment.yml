@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write  
-      contents: read   
+      id-token: write  # Required for OIDC authentication
+      contents: read   # Required for accessing repository content
 
     steps:
     - name: Checkout code
@@ -23,14 +23,14 @@ jobs:
         role-to-assume: arn:aws:iam::235494823972:role/S3bucket-IAC
         aws-region: ap-south-1
 
-    - name: Install Kics
+    - name: Install cfn-lint
       run: |
-        curl -sSL https://github.com/Checkmarx/kics/releases/download/v1.8.1/kics-linux-amd64.tar.gz | tar -xz
-        sudo mv kics /usr/local/bin/
+        python -m pip install --upgrade pip
+        pip install cfn-lint
 
-    - name: Run Kics to scan CloudFormation template
+    - name: Run cfn-lint to scan CloudFormation template
       run: |
-        kics scan --path S3_Bucket_Creation.yml --preset checkov
+        cfn-lint S3_Bucket_Creation.yml
 
     - name: Deploy CloudFormation Stack
       run: |
