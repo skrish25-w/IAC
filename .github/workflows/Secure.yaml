@@ -23,7 +23,10 @@ jobs:
 
     - name: Install Terraform via Snap
       run: |
-        sudo snap install terraform
+        TERRAFORM_VERSION="1.5.0"  # Adjust this to the desired version
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+        sudo mv terraform /usr/local/bin/
 
     - name: Install Checkov (latest version)
       run: |
