@@ -23,14 +23,15 @@ jobs:
         role-to-assume: arn:aws:iam::235494823972:role/S3bucket-IAC
         aws-region: ap-south-1
 
-    - name: Install cfn-lint
+    - name: Install AWS cfn-guard
       run: |
-        python -m pip install --upgrade pip
-        pip install cfn-lint
+        curl -Lo cfn-guard https://github.com/aws-cloudformation/cloudformation-guard/releases/latest/download/cfn-guard-linux
+        chmod +x cfn-guard
+        sudo mv cfn-guard /usr/local/bin/
 
-    - name: Run cfn-lint to scan CloudFormation template
+    - name: Run cfn-guard to enforce security best practices
       run: |
-        cfn-lint S3_Bucket_Creation.yml
+        cfn-guard validate --rules rules.guard --data S3_Bucket_Creation.yml
 
     - name: Deploy CloudFormation Stack
       run: |
