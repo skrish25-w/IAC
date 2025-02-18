@@ -1,8 +1,3 @@
-provider "aws" {
-  region = "ap-south-1"
-}
-
-# S3 Audit Logging Bucket
 resource "aws_s3_bucket" "audit_logging" {
   bucket = "secureiac-audit-logs"
 
@@ -19,6 +14,15 @@ resource "aws_s3_bucket" "audit_logging" {
     enabled = true
   }
 
+  # Encryption (AES256)
+  encryption {
+    server_side_encryption_configuration {
+      server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+
   # Logging Configuration
   logging {
     target_bucket = aws_s3_bucket.logging.bucket
@@ -30,39 +34,38 @@ resource "aws_s3_bucket" "audit_logging" {
     rule = "BucketOwnerEnforced"
   }
 
-  # Bucket Policy (to prevent lockout)
-  bucket_policy {
-    policy = jsonencode({
-      Version   = "2012-10-17"
-      Statement = [
-        {
-          Action    = "s3:ListBucket"
-          Effect    = "Allow"
-          Principal = "*"
-          Resource  = "arn:aws:s3:::${aws_s3_bucket.audit_logging.bucket}"
-          Condition = {
-            IpAddress = {
-              "aws:SourceIp" = "0.0.0.0/0"
-            }
-          }
-        },
-        {
-          Action    = "s3:GetObject"
-          Effect    = "Allow"
-          Principal = "*"
-          Resource  = "arn:aws:s3:::${aws_s3_bucket.audit_logging.bucket}/*"
-        }
-      ]
-    })
-  }
-
   # Prevent Destroy
   lifecycle {
     prevent_destroy = true
   }
+
+  # Cross-Region Replication (if required, configure replication accordingly)
+  replication_configuration {
+    role = aws_iam_role.replication_role.arn
+    rules {
+      id     = "ReplicationRule"
+      status = "Enabled"
+
+      destination {
+        bucket        = "arn:aws:s3:::replica-bucket"
+        storage_class = "STANDARD"
+      }
+
+      filter {
+        prefix = "logs/"
+      }
+    }
+  }
+
+  # Event Notification Configuration
+  event_notification {
+    event_types = ["s3:ObjectCreated:*"]
+    lambda_function {
+      lambda_function_arn = aws_lambda_function.s3_event_processor.arn
+    }
+  }
 }
 
-# S3 Logging Bucket
 resource "aws_s3_bucket" "logging" {
   bucket = "secureiac-logs"
 
@@ -94,9 +97,34 @@ resource "aws_s3_bucket" "logging" {
   lifecycle {
     prevent_destroy = true
   }
+
+  # Cross-Region Replication (if required, configure replication accordingly)
+  replication_configuration {
+    role = aws_iam_role.replication_role.arn
+    rules {
+      id     = "ReplicationRule"
+      status = "Enabled"
+
+      destination {
+        bucket        = "arn:aws:s3:::replica-bucket"
+        storage_class = "STANDARD"
+      }
+
+      filter {
+        prefix = "logs/"
+      }
+    }
+  }
+
+  # Event Notification Configuration
+  event_notification {
+    event_types = ["s3:ObjectCreated:*"]
+    lambda_function {
+      lambda_function_arn = aws_lambda_function.s3_event_processor.arn
+    }
+  }
 }
 
-# S3 Secure IAC Bucket
 resource "aws_s3_bucket" "secure_iac" {
   bucket = "secureiac"
 
@@ -137,20 +165,94 @@ resource "aws_s3_bucket" "secure_iac" {
   lifecycle {
     prevent_destroy = true
   }
+
+  # Cross-Region Replication (if required, configure replication accordingly)
+  replication_configuration {
+    role = aws_iam_role.replication_role.arn
+    rules {
+      id     = "ReplicationRule"
+      status = "Enabled"
+
+      destination {
+        bucket        = "arn:aws:s3:::replica-bucket"
+        storage_class = "STANDARD"
+      }
+
+      filter {
+        prefix = "logs/"
+      }
+    }
+  }
+
+  # Event Notification Configuration
+  event_notification {
+    event_types = ["s3:ObjectCreated:*"]
+    lambda_function {
+      lambda_function_arn = aws_lambda_function.s3_event_processor.arn
+    }
+  }
 }
 
-# Outputs
-output "SecureIACBucketName" {
-  description = "Name of the secure S3 bucket"
-  value       = aws_s3_bucket.secure_iac.bucket
+resource "aws_iam_role" "replication_role" {
+  name = "s3-replication-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+      },
+    ]
+  })
 }
 
-output "LoggingBucketName" {
-  description = "Name of the logging S3 bucket"
-  value       = aws_s3_bucket.logging.bucket
+resource "aws_lambda_function" "s3_event_processor" {
+  filename      = "function.zip"
+  function_name = "s3-event-processor"
+  role          = aws_iam_role.lambda_exec_role.arn
+  handler       = "index.handler"
+  runtime       = "nodejs14.x"
 }
 
-output "AuditLoggingBucketName" {
-  description = "Name of the audit logging S3 bucket"
-  value       = aws_s3_bucket.audit_logging.bucket
+resource "aws_iam_role" "lambda_exec_role" {
+  name = "lambda-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+resource "aws_iam_policy" "lambda_exec_policy" {
+  name        = "lambda-execution-policy"
+  description = "IAM policy for Lambda execution"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = "s3:GetObject"
+        Effect   = "Allow"
+        Resource = "arn:aws:s3:::secureiac/*"
+      },
+    ]
+  })
+}
+
+resource "aws_iam_policy_attachment" "lambda_exec_policy_attachment" {
+  name       = "lambda-execution-policy-attachment"
+  policy_arn = aws_iam_policy.lambda_exec_policy.arn
+  roles      = [aws_iam_role.lambda_exec_role.name]
 }
