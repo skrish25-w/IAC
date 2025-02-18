@@ -22,12 +22,13 @@ jobs:
       with:
         role-to-assume: arn:aws:iam::235494823972:role/S3bucket-IAC
         aws-region: ap-south-1
-
+    
     - name: Install AWS cfn-guard
       run: |
-        curl -Lo cfn-guard https://github.com/aws-cloudformation/cloudformation-guard/releases/latest/download/cfn-guard-linux-x86_64
+        curl -Lo cfn-guard https://github.com/aws-cloudformation/cloudformation-guard/releases/latest/download/cfn-guard-linux
         chmod +x cfn-guard
         sudo mv cfn-guard /usr/local/bin/cfn-guard
+        ls -l /usr/local/bin/cfn-guard  # Check if the file exists
         cfn-guard --version  # Verify installation
 
     - name: Run cfn-guard to enforce security best practices
