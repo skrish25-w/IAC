@@ -2,6 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   AuditLoggingBucket:
     Type: AWS::S3::Bucket
+    Metadata:
+      checkov:
+        skip:
+          - id: CKV_AWS_18
+            comment: "AuditLoggingBucket is a designated log storage bucket and does not need access logging."
     Properties:
       BucketName: secureiac-audit-logs
       PublicAccessBlockConfiguration:
