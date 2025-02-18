@@ -1,5 +1,3 @@
-name: Deploy S3 Buckets with Security Checks
-
 on:
   push:
     branches:
@@ -29,15 +27,20 @@ jobs:
 
     - name: Run Checkov to enforce security best practices
       run: |
-        checkov -f Secure-S3.yml --quiet
+        checkov -f Secure-S3.yml --quiet || { echo 'Checkov scan failed'; exit 1; }
 
     - name: Validate CloudFormation Template
       run: |
         aws cloudformation validate-template --template-body file://Secure-S3.yml
+        if [ $? -ne 0 ]; then
+          echo "CloudFormation template validation failed"
+          exit 1
+        fi
 
     - name: Delete Stack if in REVIEW_IN_PROGRESS
       run: |
         STATUS=$(aws cloudformation describe-stacks --stack-name SecureIACStack --query 'Stacks[0].StackStatus' --output text || echo "NOT_FOUND")
+        echo "Current stack status: $STATUS"
         if [[ "$STATUS" == "REVIEW_IN_PROGRESS" ]]; then
           echo "Stack is stuck in REVIEW_IN_PROGRESS. Deleting..."
           aws cloudformation delete-stack --stack-name SecureIACStack
@@ -46,12 +49,13 @@ jobs:
 
     - name: Deploy CloudFormation Stack
       run: |
+        echo "Deploying CloudFormation stack..."
         aws cloudformation deploy \
           --stack-name SecureIACStack \
           --template-file Secure-S3.yml \
           --capabilities CAPABILITY_NAMED_IAM \
           --no-fail-on-empty-changeset \
-          --region ap-south-1
+          --region ap-south-1 || { echo 'CloudFormation deploy failed'; exit 1; }
 
     - name: Verify S3 Bucket Exists
       run: |
@@ -64,4 +68,5 @@ jobs:
 
     - name: Upload index.html to S3 bucket
       run: |
-        aws s3 cp index.html s3://secureiac/index.html
+        echo "Uploading index.html to S3 bucket..."
+        aws s3 cp index.html s3://secureiac/index.html || { echo 'S3 upload failed'; exit 1; }
