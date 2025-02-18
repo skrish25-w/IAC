@@ -12,6 +12,11 @@ Resources:
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerEnforced
+      VersioningConfiguration:
+        Status: Enabled  # Enable versioning for the LoggingBucket
+      LoggingConfiguration:
+        DestinationBucketName: !Ref SecureIACBucket  # Enable logging to the SecureIACBucket
+        LogFilePrefix: "logs/"
 
   SecureIACBucket:
     Type: AWS::S3::Bucket
@@ -26,7 +31,7 @@ Resources:
         DestinationBucketName: !Ref LoggingBucket
         LogFilePrefix: "logs/"
       VersioningConfiguration:
-        Status: Enabled
+        Status: Enabled  # Versioning enabled for SecureIACBucket
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
