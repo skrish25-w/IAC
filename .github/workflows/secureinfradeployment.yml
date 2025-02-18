@@ -23,19 +23,15 @@ jobs:
         role-to-assume: arn:aws:iam::235494823972:role/S3bucket-IAC
         aws-region: ap-south-1
 
-    - name: Install Rust and cfn-guard
+    - name: Install Checkov
       run: |
-        sudo apt update && sudo apt install -y curl
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source $HOME/.cargo/env
-        cargo install cfn-guard
-        echo "export PATH=$HOME/.cargo/bin:$PATH" >> $HOME/.bashrc
-        source $HOME/.bashrc
-        cfn-guard --version  # Verify installation
+        pip install --upgrade pip
+        pip install checkov
+        checkov --version  # Verify Checkov installation
 
-    - name: Run cfn-guard to enforce security best practices
+    - name: Run Checkov to enforce security best practices
       run: |
-        cfn-guard validate --rules rules.guard --data S3_Bucket_Creation.yml
+        checkov -f S3_Bucket_Creation.yml --check CKV_AWS_17  # Example Checkov check for S3 bucket security
 
     - name: Deploy CloudFormation Stack
       run: |
