@@ -1,4 +1,4 @@
-name: Create S3 Bucket and Upload index.html
+name: Deploy S3 Buckets with Security Checks
 
 on:
   push:
@@ -23,24 +23,38 @@ jobs:
         role-to-assume: arn:aws:iam::235494823972:role/S3bucket-IAC
         aws-region: ap-south-1
 
-    - name: Install Checkov
+    - name: Install Checkov (latest version)
       run: |
-        pip install --upgrade pip
-        pip install checkov
-        checkov --version  # Verify Checkov installation
+        pip install -U checkov
 
     - name: Run Checkov to enforce security best practices
       run: |
-        checkov -f Secure-S3.yml 
+        checkov -f Secure-S3.yml --quiet
 
-    - name: Deploy CloudFormation Stack
+    - name: Validate CloudFormation Template
       run: |
-        aws cloudformation deploy \
-         --template-file S3_Bucket_Creation.yml \
-         --stack-name SecureIACStack \
-         --capabilities CAPABILITY_NAMED_IAM \
-         --no-fail-on-empty-changeset
+        aws cloudformation validate-template --template-body file://Secure-S3.yml
 
+    - name: Delete Stack if in REVIEW_IN_PROGRESS
+      run: |
+        STATUS=$(aws cloudformation describe-stacks --stack-name SecureIACStack --query 'Stacks[0].StackStatus' --output text || echo "NOT_FOUND")
+        if [[ "$STATUS" == "REVIEW_IN_PROGRESS" ]]; then
+          echo "Stack is stuck in REVIEW_IN_PROGRESS. Deleting..."
+          aws cloudformation delete-stack --stack-name SecureIACStack
+          aws cloudformation wait stack-delete-complete --stack-name SecureIACStack
+        fi
+
+    - name: Create Change Set
+      run: |
+        aws cloudformation create-change-set \
+          --stack-name SecureIACStack \
+          --template-body file://Secure-S3.yml \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --change-set-name SecureIACChangeSet || echo "No changes detected."
+
+    - name: Execute Change Set
+      run: |
+        aws cloudformation execute-change-set --change-set-name SecureIACChangeSet --stack-name SecureIACStack || echo "Skipping execution."
 
     - name: Upload index.html to S3 bucket
       run: |
