@@ -1,0 +1,45 @@
+name: Create S3 Bucket and Upload index.html
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write  # Required for OIDC authentication
+      contents: read   # Required for accessing repository content
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up AWS credentials using OIDC
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: arn:aws:iam::235494823972:role/S3bucket-IAC
+        aws-region: ap-south-1
+
+    - name: Install Checkov
+      run: |
+        pip install --upgrade pip
+        pip install checkov
+        checkov --version  # Verify Checkov installation
+
+    - name: Run Checkov to enforce security best practices
+      run: |
+        checkov -f Secure-S3.yml 
+
+    - name: Deploy CloudFormation Stack
+      run: |
+        aws cloudformation deploy \
+          --template-file S3_Bucket_Creation.yml \
+          --stack-name SecureIACStack \
+          --capabilities CAPABILITY_NAMED_IAM
+
+    - name: Upload index.html to S3 bucket
+      run: |
+        aws s3 cp index.html s3://secureiac/index.html
