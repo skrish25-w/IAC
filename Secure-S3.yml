@@ -1,74 +1,110 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Resources:
-  AuditLoggingBucket:
-    Type: AWS::S3::Bucket
-    Metadata:
-      checkov:
-        skip:
-          - id: CKV_AWS_18
-            comment: "AuditLoggingBucket is a designated log storage bucket and does not need access logging."
-    Properties:
-      BucketName: secureiac-audit-logs
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        IgnorePublicAcls: true
-        BlockPublicPolicy: true
-        RestrictPublicBuckets: true
-      OwnershipControls:
-        Rules:
-          - ObjectOwnership: BucketOwnerEnforced
-      VersioningConfiguration:
-        Status: Enabled
+provider "aws" {
+  region = "ap-south-1"
+}
 
-  LoggingBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: secureiac-logs
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        IgnorePublicAcls: true
-        BlockPublicPolicy: true
-        RestrictPublicBuckets: true
-      OwnershipControls:
-        Rules:
-          - ObjectOwnership: BucketOwnerEnforced
-      VersioningConfiguration:
-        Status: Enabled
-      LoggingConfiguration:
-        DestinationBucketName: !Ref AuditLoggingBucket
-        LogFilePrefix: "audit-logs/"
+resource "aws_s3_bucket" "audit_logging" {
+  bucket = "secureiac-audit-logs"
 
-  SecureIACBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: secureiac
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        IgnorePublicAcls: true
-        BlockPublicPolicy: true
-        RestrictPublicBuckets: true
-      LoggingConfiguration:
-        DestinationBucketName: !Ref LoggingBucket
-        LogFilePrefix: "logs/"
-      VersioningConfiguration:
-        Status: Enabled
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-      OwnershipControls:
-        Rules:
-          - ObjectOwnership: BucketOwnerEnforced
+  public_access_block_configuration {
+    block_public_acls        = true
+    ignore_public_acls       = true
+    block_public_policy      = true
+    restrict_public_buckets  = true
+  }
 
-Outputs:
-  SecureIACBucketName:
-    Description: "Name of the secure S3 bucket"
-    Value: !Ref SecureIACBucket
+  ownership_controls {
+    rules {
+      object_ownership = "BucketOwnerEnforced"
+    }
+  }
 
-  LoggingBucketName:
-    Description: "Name of the logging S3 bucket"
-    Value: !Ref LoggingBucket
+  versioning {
+    enabled = true
+  }
 
-  AuditLoggingBucketName:
-    Description: "Name of the audit logging S3 bucket"
-    Value: !Ref AuditLoggingBucket
+  metadata = {
+    checkov = jsonencode({
+      skip = [
+        {
+          id      = "CKV_AWS_18"
+          comment = "AuditLoggingBucket is a designated log storage bucket and does not need access logging."
+        }
+      ]
+    })
+  }
+}
+
+resource "aws_s3_bucket" "logging" {
+  bucket = "secureiac-logs"
+
+  public_access_block_configuration {
+    block_public_acls        = true
+    ignore_public_acls       = true
+    block_public_policy      = true
+    restrict_public_buckets  = true
+  }
+
+  ownership_controls {
+    rules {
+      object_ownership = "BucketOwnerEnforced"
+    }
+  }
+
+  versioning {
+    enabled = true
+  }
+
+  logging {
+    target_bucket = aws_s3_bucket.audit_logging.bucket
+    prefix        = "audit-logs/"
+  }
+}
+
+resource "aws_s3_bucket" "secure_iac" {
+  bucket = "secureiac"
+
+  public_access_block_configuration {
+    block_public_acls        = true
+    ignore_public_acls       = true
+    block_public_policy      = true
+    restrict_public_buckets  = true
+  }
+
+  logging {
+    target_bucket = aws_s3_bucket.logging.bucket
+    prefix        = "logs/"
+  }
+
+  versioning {
+    enabled = true
+  }
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+
+  ownership_controls {
+    rules {
+      object_ownership = "BucketOwnerEnforced"
+    }
+  }
+}
+
+output "secure_iac_bucket_name" {
+  description = "Name of the secure S3 bucket"
+  value       = aws_s3_bucket.secure_iac.bucket
+}
+
+output "logging_bucket_name" {
+  description = "Name of the logging S3 bucket"
+  value       = aws_s3_bucket.logging.bucket
+}
+
+output "audit_logging_bucket_name" {
+  description = "Name of the audit logging S3 bucket"
+  value       = aws_s3_bucket.audit_logging.bucket
+}
