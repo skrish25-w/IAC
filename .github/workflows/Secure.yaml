@@ -36,9 +36,10 @@ jobs:
     - name: Deploy CloudFormation Stack
       run: |
         aws cloudformation deploy \
-          --template-file S3_Bucket_Creation.yml \
-          --stack-name SecureIACStack \
-          --capabilities CAPABILITY_NAMED_IAM
+           --template-file S3_Bucket_Creation.yml \
+           --stack-name SecureIACStack \
+           --capabilities CAPABILITY_NAMED_IAM \
+           --no-execute-changeset
 
     - name: Upload index.html to S3 bucket
       run: |
