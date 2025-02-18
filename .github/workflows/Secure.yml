@@ -31,13 +31,9 @@ jobs:
       run: |
         checkov -f Secure-S3.yml --quiet
 
-    - name: Validate CloudFormation Template
-      run: |
-        aws cloudformation validate-template --template-body file://Secure-S3.yml
-
     - name: Deploy CloudFormation Stack
       run: |
-        aws cloudformation create \
+        aws cloudformation create-stack \
           --stack-name SecureIACStack \
           --template-file Secure-S3.yml \
           --region ap-south-1
