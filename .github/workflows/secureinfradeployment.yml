@@ -31,7 +31,7 @@ jobs:
 
     - name: Run Checkov to enforce security best practices
       run: |
-        checkov -f S3_Bucket_Creation.yml --check CKV_AWS_17  # Example Checkov check for S3 bucket security
+        checkov -f S3_Bucket_Creation.yml 
 
     - name: Deploy CloudFormation Stack
       run: |
