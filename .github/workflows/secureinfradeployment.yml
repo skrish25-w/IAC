@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write  # Necessary for OIDC authentication
-      contents: read   # For accessing repository content
+      id-token: write  
+      contents: read   
 
     steps:
     - name: Checkout code
@@ -23,15 +23,14 @@ jobs:
         role-to-assume: arn:aws:iam::235494823972:role/S3bucket-IAC
         aws-region: ap-south-1
 
-    - name: Install Checkov
+    - name: Install Kics
       run: |
-        python -m pip install --upgrade pip
-        pip install checkov
-    - name: Clear Checkov Cache
-      run: rm -rf ~/.checkov
-        
-    - name: Run Checkov to scan CFT
-      run: checkov -f S3_Bucket_Creation.yml 
+        curl -sSL https://github.com/Checkmarx/kics/releases/download/v1.8.1/kics-linux-amd64.tar.gz | tar -xz
+        sudo mv kics /usr/local/bin/
+
+    - name: Run Kics to scan CloudFormation template
+      run: |
+        kics scan --path S3_Bucket_Creation.yml --preset checkov
 
     - name: Deploy CloudFormation Stack
       run: |
