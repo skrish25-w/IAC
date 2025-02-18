@@ -1,40 +1,45 @@
-provider "aws" {
-  region = "us-west-2"  # Update this to your region
-}
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  LoggingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: secureiac-logs
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
 
-resource "aws_s3_bucket" "SecureIACBucket" {
-  bucket = "secureiac"
+  SecureIACBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: secureiac
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LoggingBucket
+        LogFilePrefix: "logs/"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
 
-  versioning {
-    enabled = true  # Ensures versioning is enabled
-  }
+Outputs:
+  SecureIACBucketName:
+    Description: "Name of the secure S3 bucket"
+    Value: !Ref SecureIACBucket
 
-  # Public Access Block Configuration
-  acl = "private"  # Setting the ACL to private ensures no public access by default
-
-  public_access_block_configuration {
-    block_public_acls       = true     # Block public ACLs
-    ignore_public_acls      = true     # Ignore public ACLs
-    block_public_policy     = true     # Block public policies
-    restrict_public_buckets = true     # Restrict public buckets
-  }
-
-  # Server-Side Encryption
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"  # Ensures server-side encryption with AES256
-      }
-    }
-  }
-
-  # Logging Configuration
-  logging {
-    target_bucket = "logging-bucket-name"  # Replace with the actual bucket name for logging
-    target_prefix = "logs/"  # Specify log file prefix
-  }
-
-  tags = {
-    Name = "SecureIACBucket"
-  }
-}
+  LoggingBucketName:
+    Description: "Name of the logging S3 bucket"
+    Value: !Ref LoggingBucket
