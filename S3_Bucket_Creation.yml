@@ -10,7 +10,7 @@ Resources:
         BlockPublicPolicy: false
         RestrictPublicBuckets: false
 
-  SecureIACBucketPolicy:
+  SecureIACBucketPolicy:   #adding
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref SecureIACBucket
