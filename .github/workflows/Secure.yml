@@ -34,9 +34,9 @@ jobs:
     - name: Deploy CloudFormation Stack
       run: |
         aws cloudformation create-stack \
-          --stack-name SecureIACStack \
-          --template-file Secure-S3.yml \
-          --region ap-south-1
+        --stack-name SecureIACStack \
+        --template-body file://Secure-S3.yml \
+        --region ap-south-1
 
     - name: Verify S3 Bucket Exists
       run: |
