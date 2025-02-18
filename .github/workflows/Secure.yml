@@ -38,15 +38,3 @@ jobs:
         --template-body file://Secure-S3.yml \
         --region ap-south-1
 
-    - name: Verify S3 Bucket Exists
-      run: |
-        echo "Checking if S3 bucket 'secureiac' exists..."
-        until aws s3 ls "s3://secureiac" 2>/dev/null; do
-          echo "Waiting for S3 bucket secureiac to be created..."
-          sleep 5
-        done
-        echo "S3 bucket secureiac is ready."
-
-    - name: Upload index.html to S3 bucket
-      run: |
-        aws s3 cp index.html s3://secureiac/index.html
