@@ -44,17 +44,23 @@ jobs:
           aws cloudformation wait stack-delete-complete --stack-name SecureIACStack
         fi
 
-    - name: Create Change Set
+    - name: Deploy CloudFormation Stack
       run: |
-        aws cloudformation create-change-set \
+        aws cloudformation deploy \
           --stack-name SecureIACStack \
-          --template-body file://Secure-S3.yml \
+          --template-file Secure-S3.yml \
           --capabilities CAPABILITY_NAMED_IAM \
-          --change-set-name SecureIACChangeSet || echo "No changes detected."
+          --no-fail-on-empty-changeset \
+          --region ap-south-1
 
-    - name: Execute Change Set
+    - name: Verify S3 Bucket Exists
       run: |
-        aws cloudformation execute-change-set --change-set-name SecureIACChangeSet --stack-name SecureIACStack || echo "Skipping execution."
+        echo "Checking if S3 bucket 'secureiac' exists..."
+        until aws s3 ls "s3://secureiac" 2>/dev/null; do
+          echo "Waiting for S3 bucket secureiac to be created..."
+          sleep 5
+        done
+        echo "S3 bucket secureiac is ready."
 
     - name: Upload index.html to S3 bucket
       run: |
