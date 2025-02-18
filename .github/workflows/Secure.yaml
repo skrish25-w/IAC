@@ -40,15 +40,15 @@ jobs:
 
     - name: Validate Terraform configuration
       run: |
-        terraform validate
+        terraform validate -var-file=Secure-S3.tf
 
     - name: Plan Terraform deployment
       run: |
-        terraform plan
+        terraform plan -var-file=Secure-S3.tf
 
     - name: Apply Terraform configuration
       run: |
-        terraform apply -auto-approve
+        terraform apply -auto-approve -var-file=Secure-S3.tf
 
     - name: Verify S3 Bucket Exists
       run: |
