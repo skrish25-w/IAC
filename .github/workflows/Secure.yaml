@@ -21,10 +21,9 @@ jobs:
         role-to-assume: arn:aws:iam::235494823972:role/S3bucket-IAC
         aws-region: ap-south-1
 
-    - name: Install Terraform
+    - name: Install Terraform via Snap
       run: |
-        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        sudo apt update && sudo apt install terraform
+        sudo snap install terraform
 
     - name: Install Checkov (latest version)
       run: |
@@ -40,15 +39,15 @@ jobs:
 
     - name: Validate Terraform configuration
       run: |
-        terraform validate -var-file=Secure-S3.tf
+        terraform validate
 
     - name: Plan Terraform deployment
       run: |
-        terraform plan -var-file=Secure-S3.tf
+        terraform plan
 
     - name: Apply Terraform configuration
       run: |
-        terraform apply -auto-approve -var-file=Secure-S3.tf
+        terraform apply -auto-approve
 
     - name: Verify S3 Bucket Exists
       run: |
