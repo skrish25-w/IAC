@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      id-token: write  # Required for OIDC authentication
-      contents: read   # Required for accessing repository content
+      id-token: write  
+      contents: read   
 
     steps:
     - name: Checkout code
@@ -27,7 +27,7 @@ jobs:
       run: |
         pip install --upgrade pip
         pip install checkov
-        checkov --version  # Verify Checkov installation
+        checkov --version  
 
     - name: Run Checkov to enforce security best practices
       run: |
